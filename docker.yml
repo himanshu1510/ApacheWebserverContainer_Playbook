@@ -1,0 +1,78 @@
+- hosts: localhost
+
+  tasks:
+   - file:
+          state: directory
+          path: "/dvd1"
+   - mount:
+          src: "/dev/cdrom"
+          path: "/dvd1"
+          state: mounted
+          fstype: "iso9660"
+   - yum_repository:
+          baseurl: "/dvd1/AppStream"
+          name: "mydvd1"
+          description: "dvd1 for pacakge"
+          gpgcheck: no
+   - yum_repository:
+          baseurl: "/dvd1/BaseOS"
+          name: "mydvd2"
+          description: "dvd2 for package"
+          gpgcheck: no
+   - name: Add multiple repositories into the same file (1/2)
+     yum_repository:
+       name: setting up docker
+       description: docker 
+       baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+       gpgcheck: no
+
+
+            
+   - name: "install docker"
+     command: "yum install docker-ce --nobest --allowerasing -y"
+
+   - name: "start docker service"
+     service:
+             name: docker
+             state: started
+             enabled: yes    
+     become: yes
+   - package:
+           name: python36 
+           state: present
+
+   - name: "install docker"
+     shell: "pip3 install docker"
+             
+
+   - name : "create a directory"
+     file:
+             state: directory
+             path: /root/httpd
+
+   - name: "copy web pages"
+     copy:
+             src: "/root/ansible_playbook/Docker/webpage/"
+             dest: "/root/httpd/"     
+   
+   - name: "pull httpd image"
+     docker_image:
+             name: httpd
+             source: pull
+
+   - name: "install httpd conatiner"
+     docker_container:
+       name: apache_webserver
+       image: httpd
+       state: started
+       ports:
+         - 8080:80
+       volumes:
+         - /root/httpd:/usr/local/apache2/htdocs/
+           
+
+   - firewalld:
+       port: 8081/tcp
+       permanent: yes
+       state: enabled
+
